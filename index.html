@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduSync - Inovação e Tecnologia</title>
+    <!-- Google Fonts & Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons for Canvas Toolbar Buttons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #lousa-canvas { touch-action: none; cursor: crosshair; }
+        :focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
+        body.alto-contraste { background: #000 !important; color: #fff !important; }
+        body.alto-contraste main, body.alto-contraste section:not(#lousa-ao-vivo), body.alto-contraste footer,
+        body.alto-contraste header { filter: contrast(1.2); }
+        body.alto-contraste p, body.alto-contraste label, body.alto-contraste span { text-shadow: 0 0 0.01px currentColor; }
+        
+        /* Grid and Dot pattern backgrounds for Canvas container */
+        .bg-grid-pattern {
+            background-size: 24px 24px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+        }
+        .bg-grid-pattern-light {
+            background-size: 24px 24px;
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+        }
+        .bg-dot-pattern {
+            background-size: 20px 20px;
+            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px);
+        }
+        .bg-dot-pattern-light {
+            background-size: 20px 20px;
+            background-image: radial-gradient(circle, rgba(0, 0, 0, 0.15) 1.5px, transparent 1.5px);
+        }
+
+        /* Fallback class for pseudo-fullscreen in sandboxed/restricted iframe environments */
+        .custom-fullscreen {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 9999 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0 !important;
+            max-width: none !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- CABEÇALHO / NAVBAR -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-indigo-600 to-violet-600 text-white p-2.5 rounded-xl font-bold text-lg shadow-md shadow-indigo-200">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <span class="text-xl font-extrabold bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
+                    EduSync
+                </span>
+            </div>
+            
+            <!-- Desktop Navigation -->
+            <nav class="hidden md:flex space-x-8 text-sm font-medium text-slate-600">
+                <a href="#inicio" class="hover:text-indigo-600 transition-colors">Início</a>
+                <a href="#projetos" class="hover:text-indigo-600 transition-colors">Projetos Maker</a>
+                <a href="#achados-perdidos" class="hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                    <span>Achados & Perdidos</span>
+                    <span id="badge-contador-perdidos" class="bg-rose-100 text-rose-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-rose-200">0 perdidos</span>
+                </a>
+                <a href="#lousa-ao-vivo" class="text-indigo-600 font-semibold flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 hover:bg-indigo-100 transition-all">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                    </span>
+                    Lousas das Salas
+                </a>
+            </nav>
+
+            <!-- Quick Action Button & Cadastro -->
+            <div class="hidden sm:flex items-center gap-3">
+                <div id="user-profile-badge" class="hidden items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
+                    <span id="user-type-icon" class="text-indigo-600"><i class="fa-solid fa-user-graduate"></i></span>
+                    <div class="text-left leading-tight">
+                        <strong id="user-name-display" class="block text-slate-800 font-bold">Nome do Usuário</strong>
+                        <span id="user-role-display" class="text-[10px] text-indigo-600 font-medium">Aluno</span>
+                    </div>
+                </div>
+                <button id="btn-abrir-cadastro" class="text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span id="btn-cadastro-texto">Cadastrar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <section aria-label="Acessibilidade" class="bg-indigo-50 border-b border-indigo-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-end gap-2 text-xs">
+            <span class="font-semibold text-slate-700 mr-1">Acessibilidade:</span>
+            <button type="button" id="a11y-diminuir" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100" aria-label="Diminuir tamanho do texto">A−</button>
+            <button type="button" id="a11y-aumentar" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100" aria-label="Aumentar tamanho do texto">A+</button>
+            <button type="button" id="a11y-contraste" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100" aria-pressed="false">Alto contraste</button>
+            <button type="button" id="a11y-reset" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100">Restaurar</button>
+        </div>
+    </section>
+
+    <!-- SEÇÃO HERO (INÍCIO) -->
+    <section id="inicio" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 grid md:grid-cols-2 gap-12 items-center">
+        <div>
+            <span class="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider mb-4 shadow-sm">
+                <i class="fa-solid fa-rocket"></i> Educação do Futuro
+            </span>
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-6">
+                Transformando a sala de aula com <span class="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Tecnologia Interativa</span>.
+            </h1>
+            <p class="text-lg text-slate-600 mb-8 leading-relaxed">
+                Um espaço onde a criatividade dos estudantes encontra a engenharia moderna. Desenvolvemos soluções reais para o cotidiano escolar, como a nossa lousa digital interativa sincronizada em tempo real.
+            </p>
+            <div class="flex flex-wrap gap-4">
+                <a href="#lousa-ao-vivo" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3.5 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-ruler"></i> Acessar Lousa ao Vivo
+                </a>
+                <a href="#projetos" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium px-6 py-3.5 rounded-xl transition-all shadow-sm">
+                    Ver Outros Projetos
+                </a>
+            </div>
+        </div>
+
+        <!-- Destaque Card -->
+        <div class="bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[340px] border border-indigo-400/30">
+            <!-- Background Glow & Pattern -->
+            <div class="absolute -right-6 -bottom-6 opacity-10 text-8xl font-bold select-none pointer-events-none">
+                <i class="fa-solid fa-lightbulb"></i>
+            </div>
+            <div class="absolute -top-24 -left-24 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border border-white/20">
+                        <i class="fa-solid fa-star text-amber-300 mr-1"></i> Destaque da Semana
+                    </span>
+                    <span class="text-indigo-200 text-xs font-mono">v2.5 Updated</span>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Quadro na Tela</h3>
+                <p class="text-indigo-100 leading-relaxed text-sm md:text-base">
+                    Elimina a barreira do "copiar correndo". O conteúdo que o professor e os alunos produzem na lousa digital é renderizado com alta fidelidade e sincronização em tempo real.
+                </p>
+            </div>
+
+            <div class="pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                <div class="inline-flex items-center gap-2 bg-black/20 backdrop-blur-md px-3.5 py-1.5 rounded-lg text-xs font-medium border border-white/10">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                    </span>
+                    <span>Status: <strong class="text-emerald-300">Ativo e Funcional</strong></span>
+                </div>
+                <span class="text-xs text-indigo-200">100% Web & Mobile Ready</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO DE PROJETOS MAKER -->
+    <section id="projetos" class="bg-white py-20 border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-indigo-600 font-semibold text-xs uppercase tracking-wider">Cultura Maker & Inovação</span>
+                <h2 class="text-3xl font-bold text-slate-900 mt-1 mb-4">Laboratório de Inovações</h2>
+                <p class="text-slate-600">Conheça algumas das soluções tecnológicas projetadas e desenvolvidas por nossos alunos para transformar a vivência escolar.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Card 1 -->
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl mb-5 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-display"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900 mb-2">Lousa Digital Web</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                            Sincronização de traços em tempo real entre o painel interativo e os dispositivos dos alunos, com suporte a múltiplos pincéis e exportação rápida.
+                        </p>
+                    </div>
+                    <div>
+                        <span class="inline-block text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-md">
+                            Principal Destaque
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Card 2: Achados & Perdidos -->
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 hover:shadow-xl hover:border-amber-200 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl mb-5 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900 mb-2">Achados & Perdidos Digital</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                            Sistema com busca em tempo real, cadastro de alertas de itens perdidos e notificações automáticas para devolução rápida de pertences.
+                        </p>
+                    </div>
+                    <div>
+                        <span class="inline-block text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-3 py-1 rounded-md">
+                            Ativo e Disponível
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO COMPLETA: ACHADOS & PERDIDOS DIGITAL -->
+    <section id="achados-perdidos" class="py-16 bg-slate-100/70 border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                <div>
+                    <span class="text-indigo-600 font-semibold text-xs uppercase tracking-wider">Módulo Interativo</span>
+                    <h2 class="text-3xl font-bold text-slate-900 mt-1">Achados & Perdidos da Escola</h2>
+                    <p class="text-slate-600 text-sm mt-1">Encontre pertences esquecidos ou cadastre um alerta para ser notificado assim que encontrarem o seu item!</p>
+                </div>
+                
+                <!-- Botões de Ação do Módulo -->
+                <div class="flex flex-wrap items-center gap-3 self-start md:self-auto">
+                    <button id="btn-perdi-item" class="bg-rose-600 hover:bg-rose-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm shadow-md shadow-rose-200 transition flex items-center gap-2">
+                        <i class="fa-solid fa-bell"></i> Perdi algo! Me notifique
+                    </button>
+                    <button id="btn-novo-item" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm shadow-md shadow-indigo-200 transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Registrar Item Achado
+                    </button>
+                </div>
+            </div>
+
+            <!-- Toast / Notificação de Alerta -->
+            <div id="toast-notificacao" class="hidden mb-6 p-4 rounded-2xl bg-emerald-500 text-white shadow-xl flex items-center justify-between transition-all">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl"><i class="fa-solid fa-bell"></i></span>
+                    <div>
+                        <h4 class="font-bold text-sm" id="toast-titulo">Notificação Configurada!</h4>
+                        <p class="text-xs text-emerald-100" id="toast-mensagem">Se alguém encontrar o item, enviaremos um alerta direto para seu contato registrado.</p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('toast-notificacao').classList.add('hidden')" class="text-white/80 hover:text-white text-lg px-2">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Filtros e Aba de Modos -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-8 space-y-4">
+                <!-- Tabs para Alternar entre Itens Encontrados e Pedidos de Busca -->
+                <div class="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-3">
+                    <div class="flex items-center gap-2">
+                        <button id="tab-achados" class="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-box"></i> Objetos Encontrados (<span id="count-achados">0</span>)
+                        </button>
+                        <button id="tab-procurados" class="px-4 py-2 text-xs font-bold rounded-xl text-slate-500 hover:bg-slate-100 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-magnifying-glass"></i> Alertas de Itens Perdidos (<span id="count-perdidos">0</span>)
+                        </button>
+                    </div>
+
+                    <div class="text-xs text-slate-500">
+                        Exibindo: <strong id="lbl-modo-atual" class="text-slate-800">Objetos Encontrados</strong>
+                    </div>
+                </div>
+
+                <div class="grid sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-2 relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="text" id="busca-item" placeholder="Buscar por objeto, local, dono ou palavras-chave..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                    <div>
+                        <select id="filtro-categoria" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                            <option value="todos">Todas as Categorias</option>
+                            <option value="Agasalho / Roupa">Agasalhos / Roupas</option>
+                            <option value="Material Escolar">Material Escolar</option>
+                            <option value="Eletrônicos">Eletrônicos</option>
+                            <option value="Garrafas / Squeeze">Garrafas / Copos</option>
+                            <option value="Outros">Outros Objetos</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid de Itens Cadastrados -->
+            <div id="grid-itens" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Os cards serão renderizados dinamicamente pelo JS -->
+            </div>
+
+            <!-- Modal Unificado (Cadastro de Achado OU Alerta de Perdido) -->
+            <div id="modal-cadastro" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-100 max-h-[90vh] overflow-y-auto">
+                    
+                    <!-- Modal Header com Tabs Internas -->
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                        <div class="flex items-center gap-2">
+                            <button id="modal-tab-achado" class="text-sm font-bold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-box"></i> Registrar Achado
+                            </button>
+                            <button id="modal-tab-perdido" class="text-sm font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Perdi um Pertence
+                            </button>
+                        </div>
+                        <button id="btn-fechar-modal" class="text-slate-400 hover:text-slate-600 p-1">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- FORMULÁRIO 1: REGISTRAR ITEM ACHADO -->
+                    <form id="form-cadastrar-item" class="space-y-4">
+                        <div class="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 text-xs text-indigo-800">
+                            <strong>Item Encontrado:</strong> Preencha para que o dono consiga identificar e retirar na secretaria.
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nome / Descrição do Objeto</label>
+                            <input type="text" id="input-titulo" required placeholder="Ex: Casaco Azul com Zíper" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Categoria</label>
+                                <select id="input-categoria" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                                    <option value="Agasalho / Roupa">Agasalho / Roupa</option>
+                                    <option value="Material Escolar">Material Escolar</option>
+                                    <option value="Eletrônicos">Eletrônicos</option>
+                                    <option value="Garrafas / Squeeze">Garrafas / Squeeze</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Local Onde Foi Encontrado</label>
+                                <input type="text" id="input-local" required placeholder="Ex: Quadra de Esportes" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Detalhes Adicionais / Marcas</label>
+                            <textarea id="input-descricao" rows="2" placeholder="Ex: Nome 'Lucas' escrito na etiqueta interna..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500"></textarea>
+                        </div>
+
+                        <div class="pt-2 flex justify-end gap-3 border-t border-slate-100">
+                            <button type="button" class="btn-cancelar-modal px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancelar</button>
+                            <button type="submit" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow transition">Salvar Item Achado</button>
+                        </div>
+                    </form>
+
+                    <!-- FORMULÁRIO 2: REGISTRAR ITEM PERDIDO + ALERTA DE NOTIFICAÇÃO -->
+                    <form id="form-cadastrar-perdido" class="space-y-4 hidden">
+                        <div class="bg-rose-50 p-3 rounded-xl border border-rose-100 text-xs text-rose-800 flex items-center gap-2">
+                            <i class="fa-solid fa-bell text-rose-600"></i>
+                            <span><strong>Alerta de Busca:</strong> Cadastre seu pertence. Quando alguém registrar um item equivalente, enviaremos um aviso imediato!</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">O que você perdeu?</label>
+                            <input type="text" id="input-perdido-titulo" required placeholder="Ex: Fone Bluetooth JBL Preto" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Categoria</label>
+                                <select id="input-perdido-categoria" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                                    <option value="Eletrônicos">Eletrônicos</option>
+                                    <option value="Agasalho / Roupa">Agasalho / Roupa</option>
+                                    <option value="Material Escolar">Material Escolar</option>
+                                    <option value="Garrafas / Squeeze">Garrafas / Squeeze</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Onde acha que perdeu?</label>
+                                <input type="text" id="input-perdido-local" placeholder="Ex: Refeitório ou Sala 12" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                            </div>
+                        </div>
+
+                        <!-- Campos para Notificação -->
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                            <span class="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-paper-plane text-rose-500"></i> Onde deseja receber a notificação?
+                            </span>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Seu Nome / Turma</label>
+                                    <input type="text" id="input-perdido-dono" required placeholder="Ex: Ana Clara - 2º B" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-rose-500">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-slate-600 mb-0.5">E-mail ou WhatsApp</label>
+                                    <input type="text" id="input-perdido-contato" required placeholder="exemplo@email.com / (11) 9..." class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-rose-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição detalhada / Sinais marcantes</label>
+                            <textarea id="input-perdido-descricao" rows="2" placeholder="Ex: Capa de silicone vermelha com um arranhão no canto..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-rose-500"></textarea>
+                        </div>
+
+                        <div class="pt-2 flex justify-end gap-3 border-t border-slate-100">
+                            <button type="button" class="btn-cancelar-modal px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancelar</button>
+                            <button type="submit" class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-bell"></i> Criar Alerta de Busca
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL DE CADASTRO DE USUÁRIO (ALUNO / PROFESSOR) -->
+    <div id="modal-usuario" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-indigo-600 text-lg"><i class="fa-solid fa-user-graduate"></i></span>
+                    <h3 class="text-lg font-bold text-slate-900">Cadastro do Portal</h3>
+                </div>
+                <button id="btn-fechar-modal-usuario" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Seleção de Tipo de Perfil -->
+            <div class="grid grid-cols-2 gap-3 mb-5 p-1 bg-slate-100 rounded-xl">
+                <button id="tipo-aluno" type="button" class="py-2 px-3 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-graduation-cap"></i> Sou Aluno
+                </button>
+                <button id="tipo-professor" type="button" class="py-2 px-3 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-chalkboard-user"></i> Sou Professor
+                </button>
+            </div>
+
+            <form id="form-cadastro-usuario" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nome Completo</label>
+                    <input type="text" id="cad-nome" required placeholder="Ex: Maria Oliveira" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail Institucional</label>
+                    <input type="email" id="cad-email" required placeholder="usuario@escola.edu.br" autocomplete="email" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    <p class="mt-1 text-[11px] text-slate-500">Cadastro demonstrativo: este formulário não cria uma conta nem verifica o e-mail.</p>
+                </div>
+
+                <!-- Sala obrigatória para ambos os perfis -->
+                <div>
+                    <label for="cad-sala-usuario" class="block text-xs font-semibold text-slate-700 mb-1">Sala de acesso</label>
+                    <select id="cad-sala-usuario" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="">Selecione sua sala</option>
+                    </select>
+                    <p class="mt-1 text-[11px] text-slate-500">Após o cadastro, a interface exibirá somente a sala selecionada.</p>
+                </div>
+
+                <!-- Campo Dinâmico: Turma (Aluno) ou Disciplina (Professor) -->
+                <div id="campo-turma">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Série / Turma</label>
+                    <input type="text" id="cad-detalhe-aluno" placeholder="Ex: 2º Ano B - Ensino Médio" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div id="campo-disciplina" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Disciplina / Matéria</label>
+                    <input type="text" id="cad-detalhe-prof" placeholder="Ex: Matemática e Robótica" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Senha de Acesso</label>
+                    <input type="password" id="cad-senha" required placeholder="••••••••" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="pt-3 flex justify-end gap-3 border-t border-slate-100">
+                    <button type="button" id="btn-cancelar-cad-usuario" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow transition">Concluir Cadastro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SEÇÃO DA LOUSA AO VIVO (INTERATIVA) -->
+    <section id="lousa-ao-vivo" class="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-slate-900 rounded-3xl p-5 sm:p-8 text-white shadow-2xl border border-slate-800">
+            
+            <!-- SELETOR E GESTÃO DE SALAS -->
+            <div class="mb-6 p-4 bg-slate-800/90 rounded-2xl border border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 text-lg">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-indigo-400 block">Sala de Aula Ativa</span>
+                        <div class="flex items-center gap-2">
+                            <select id="select-sala-ativa" aria-label="Sala vinculada ao seu perfil" disabled class="bg-slate-900 text-white font-bold text-base md:text-lg border border-slate-700 rounded-xl px-3 py-1 focus:outline-none focus:border-indigo-500 cursor-not-allowed opacity-80">
+                                <option value="sala-1">Sala 1</option>
+                                <option value="sala-2">Sala 2</option>
+                                <option value="sala-3">Sala 3</option>
+                                <option value="sala-4">Sala 4</option>
+                                <option value="sala-5">Sala 5</option>
+                                <option value="sala-6">Sala 6</option>
+                                <option value="sala-7">Sala 7</option>
+                                <option value="sala-8">Sala 8</option>
+                                <option value="sala-9">Sala 9</option>
+                                <option value="sala-10">Sala 10</option>
+                                <option value="sala-11">Sala 11</option>
+                                <option value="sala-12">Sala 12</option>
+                                <option value="sala-13">Sala 13</option>
+                                <option value="sala-14">Sala 14</option>
+                                <option value="sala-15">Sala 15</option>
+                                <option value="sala-16">Sala 16</option>
+                                <option value="sala-17">Sala 17</option>
+                                <option value="sala-18">Sala 18</option>
+                                <option value="sala-19">Sala 19</option>
+                                <option value="sala-20">Sala 20</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões para gerenciar salas -->
+                <div class="flex items-center gap-2 self-start md:self-auto">
+                    <span id="badge-usuarios-sala" class="text-xs bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-xl font-medium flex items-center gap-1.5" aria-live="polite">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                        <span id="qtd-online">—</span> conectados (presença não disponível)
+                    </span>
+                    <button id="btn-chamada" type="button" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-md flex items-center gap-1.5" aria-controls="modal-chamada" aria-expanded="false">
+                        <i class="fa-solid fa-user-check"></i> Chamada
+                    </button>
+                    <button id="btn-criar-sala" class="hidden bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-md shadow-indigo-900/40 flex items-center gap-1.5" aria-hidden="true" tabindex="-1">
+                        <i class="fa-solid fa-plus"></i> Nova Sala
+                    </button>
+                </div>
+            </div>
+
+            <!-- Whiteboard Header & Status -->
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-indigo-400 font-semibold text-xs uppercase tracking-wider">Lousa Digital Sincronizada</span>
+                        <span id="tag-nome-sala" class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold px-2 py-0.5 rounded">Sala 1</span>
+                    </div>
+                    <h2 id="titulo-lousa-sala" class="text-2xl sm:text-3xl font-bold tracking-tight mt-1">Sala 1</h2>
+                    <p class="text-slate-400 text-sm mt-0.5">Sala vinculada ao perfil atual. Esta versão é uma demonstração e ainda não oferece isolamento seguro no servidor.</p>
+                </div>
+
+                <!-- Main Action Buttons -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="btn-fullscreen" title="Modo Quadro Grande (Tela Cheia)" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-md shadow-indigo-900/30 flex items-center gap-1.5">
+                        <i class="fa-solid fa-expand"></i> Quadro Grande
+                    </button>
+                    <button id="btn-undo" title="Desfazer último traço" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate-left"></i> Desfazer
+                    </button>
+                    <button id="btn-download" title="Baixar Imagem da Lousa" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> Baixar Imagem
+                    </button>
+                    <button id="btn-limpar" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-md shadow-rose-900/30 flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i> Limpar Quadro
+                    </button>
+                </div>
+            </div>
+
+            <p class="mb-3 text-xs text-slate-300">Para inserir texto digitado, escolha <strong>Texto tipográfico</strong> e clique na lousa. A conversão automática da escrita manuscrita requer um serviço de reconhecimento de escrita, ainda não conectado neste protótipo.</p>
+
+            <!-- TOOLBAR CONTROLS BAR -->
+            <div class="bg-slate-800/80 backdrop-blur-md p-3.5 rounded-2xl border border-slate-700/80 mb-4 flex flex-wrap items-center justify-between gap-4">
+                
+                <!-- Tool Selection (Pen vs Eraser) -->
+                <div class="flex items-center gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-700">
+                    <button id="tool-pen" class="bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-pen"></i> Pincel
+                    </button>
+                    <button id="tool-eraser" class="text-slate-400 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-eraser"></i> Borracha
+                    </button>
+                    <button id="tool-text" class="text-slate-400 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5" title="Inserir texto digitado na lousa">
+                        <i class="fa-solid fa-font"></i> Texto tipográfico
+                    </button>
+                </div>
+
+                <!-- Palette Colors -->
+                <div id="palette-container" class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400 hidden sm:inline">Cores:</span>
+                    <button class="color-btn w-7 h-7 rounded-full bg-white ring-2 ring-indigo-500 scale-110 transition" data-color="#ffffff" title="Branco"></button>
+                    <button class="color-btn w-7 h-7 rounded-full bg-yellow-400 hover:scale-105 transition" data-color="#facc15" title="Amarelo"></button>
+                    <button class="color-btn w-7 h-7 rounded-full bg-emerald-400 hover:scale-105 transition" data-color="#34d399" title="Verde"></button>
+                    <button class="color-btn w-7 h-7 rounded-full bg-sky-400 hover:scale-105 transition" data-color="#38bdf8" title="Azul"></button>
+                    <button class="color-btn w-7 h-7 rounded-full bg-rose-400 hover:scale-105 transition" data-color="#fb7185" title="Rosa"></button>
+                    
+                    <!-- Custom Color Picker -->
+                    <div class="relative flex items-center ml-1">
+                        <input type="color" id="cor-pincel" value="#ffffff" class="w-7 h-7 rounded-full border-0 cursor-pointer bg-transparent opacity-0 absolute inset-0 z-10">
+                        <div id="custom-color-preview" class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 border border-slate-600 flex items-center justify-center text-xs text-white">
+                            <i class="fa-solid fa-palette"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Thickness Slider -->
+                <div class="flex items-center gap-3 bg-slate-900/50 px-3 py-1.5 rounded-xl border border-slate-700/60">
+                    <label for="espessura" class="text-xs text-slate-300 flex items-center gap-1">
+                        <span>Espessura:</span>
+                        <span id="espessura-val" class="font-mono text-indigo-400 font-bold w-4">4</span>px
+                    </label>
+                    <input type="range" id="espessura" min="1" max="30" value="4" class="w-24 accent-indigo-500 cursor-pointer">
+                </div>
+
+                <!-- Canvas Background Switcher -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400 hidden lg:inline">Fundo:</span>
+                    <select id="select-bg" class="bg-slate-900 text-xs text-slate-200 border border-slate-700 rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                        <option value="dark">Escuro (Lousa)</option>
+                        <option value="grid">Quadriculado (Grid)</option>
+                        <option value="dots">Pontilhado</option>
+                        <option value="light">Claro (Branco)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Área do Quadro / Canvas Container -->
+            <p id="aviso-permissao-lousa" class="hidden mb-3 text-sm font-medium text-amber-200" role="status" aria-live="polite"></p>
+            <div id="canvas-wrapper" class="relative w-full aspect-[16/9] sm:aspect-[16/8] bg-slate-950 rounded-2xl border-2 border-slate-700 overflow-hidden shadow-inner transition-colors duration-300">
+                <canvas id="lousa-canvas" class="w-full h-full block touch-none"></canvas>
+                <div id="lousa-bloqueio-perfil" class="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/90 p-6 text-center">
+                    <div class="max-w-md">
+                        <i class="fa-solid fa-lock text-3xl text-indigo-300 mb-3"></i>
+                        <h3 class="text-lg font-bold text-white">Configure seu perfil e sua sala</h3>
+                        <p class="text-sm text-slate-300 mt-2">Cadastre-se para abrir a lousa vinculada à sua sala nesta demonstração.</p>
+                        <button type="button" id="btn-configurar-perfil-lousa" class="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg">Configurar perfil</button>
+                    </div>
+                </div>
+                
+                <!-- Watermark / Hint Badge -->
+                <div class="absolute bottom-3 left-4 text-xs text-slate-400/80 pointer-events-none bg-slate-900/60 backdrop-blur-md px-3 py-1 rounded-lg border border-slate-700/50 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Modo Professor • Suporta Caneta Touch, Stylus e Pressão</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CHAMADA / LISTA DE PRESENÇA -->
+    <div id="modal-chamada" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-chamada">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <div>
+                    <span class="text-emerald-600 text-xs font-bold uppercase tracking-wider">Área do professor</span>
+                    <h2 id="titulo-modal-chamada" class="text-lg font-bold text-slate-900">Chamada — <span id="chamada-nome-sala">sua sala</span></h2>
+                </div>
+                <button id="btn-fechar-chamada" type="button" class="text-slate-500 hover:text-slate-900 p-2 rounded-lg" aria-label="Fechar chamada"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                <strong>Presença ao vivo ainda não conectada.</strong>
+                <p class="mt-1">Esta versão não consegue detectar alunos em outros dispositivos. Para exibir uma chamada verdadeira, o sistema precisa de login institucional e um serviço de presença em tempo real no servidor.</p>
+            </div>
+            <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-slate-800">Alunos conectados</h3>
+                    <span class="text-xs text-slate-500">— aguardando integração</span>
+                </div>
+                <ul id="lista-alunos-conectados" class="mt-3 text-sm text-slate-600" aria-live="polite">
+                    <li class="py-3 text-center">A lista ficará disponível quando a presença em tempo real for configurada.</li>
+                </ul>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button id="btn-fechar-chamada-rodape" type="button" class="px-4 py-2 text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CADASTRO DE NOVA SALA DE AULA -->
+    <div id="modal-nova-sala" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100 text-slate-800">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-indigo-600 text-lg"><i class="fa-solid fa-school"></i></span>
+                    <h3 class="text-lg font-bold text-slate-900">Cadastrar Nova Sala de Aula</h3>
+                </div>
+                <button id="btn-fechar-modal-sala" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="form-cadastrar-sala" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nome / Identificação da Sala</label>
+                    <input type="text" id="cad-sala-nome" required placeholder="Ex: Sala 301 - Física Quântica" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Professor Responsável</label>
+                        <input type="text" id="cad-sala-prof" placeholder="Ex: Prof. Ricardo" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Matéria / Categoria</label>
+                        <select id="cad-sala-icone" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="fa-calculator">Exatas / Matemática</option>
+                            <option value="fa-flask">Ciências / Robótica</option>
+                            <option value="fa-book">Humanas / Português</option>
+                            <option value="fa-palette">Artes / Design</option>
+                            <option value="fa-football">Educação Física</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Senha de Acesso à Lousa (Opcional)</label>
+                    <input type="password" id="cad-sala-senha" placeholder="Deixe em branco para acesso livre" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="p-3 bg-indigo-50 rounded-xl text-xs text-indigo-800 border border-indigo-100 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-indigo-600 text-sm"></i>
+                    <span>Ao cadastrar a sala, ela ficará disponível para todos os alunos e professores no menu seletor.</span>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-3 border-t border-slate-100">
+                    <button type="button" id="btn-cancelar-cad-sala" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow transition">Criar Sala de Aula</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <section id="ajuda-privacidade" class="bg-slate-50 border-t border-slate-200 py-14">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-8">
+            <div class="bg-white border border-slate-200 rounded-2xl p-6">
+                <span class="text-indigo-600 text-xs font-bold uppercase tracking-wider">Central de ajuda</span>
+                <h2 class="text-2xl font-bold text-slate-900 mt-1 mb-4">Como usar o EduSync</h2>
+                <ul class="space-y-3 text-sm text-slate-600">
+                    <li><strong class="text-slate-800">Acesso:</strong> selecione seu perfil e a sala correspondente. Em produção, a escola deve confirmar esse vínculo.</li>
+                    <li><strong class="text-slate-800">Lousa:</strong> nesta demonstração, o perfil de professor habilita a edição; o perfil de aluno é somente leitura.</li>
+                    <li><strong class="text-slate-800">Achados e perdidos:</strong> evite publicar nomes completos, telefones, e-mails ou informações que identifiquem estudantes.</li>
+                </ul>
+                <p class="mt-4 text-xs text-slate-500">Canal de suporte: peça à escola para inserir aqui o contato institucional oficial.</p>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6">
+                <span class="text-rose-600 text-xs font-bold uppercase tracking-wider">Privacidade e segurança</span>
+                <h2 class="text-2xl font-bold text-slate-900 mt-1 mb-4">Proteção dos dados escolares</h2>
+                <p class="text-sm text-slate-600 leading-relaxed">Este protótipo usa IndexedDB para guardar achados, alertas, salas e desenhos localmente neste navegador. Os dados não são enviados a um servidor nem sincronizados entre dispositivos ou navegadores. A seleção de perfil continua sendo apenas demonstrativa.</p>
+                <p class="mt-3 text-sm text-slate-600 leading-relaxed">Antes de usar com dados reais, a escola deve configurar acesso institucional, permissões validadas no servidor, política de retenção e canal seguro para contato. Não informe dados pessoais reais nesta versão.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- RODAPÉ -->
+    <footer class="bg-white border-t border-slate-200 py-10 text-center text-sm text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-indigo-600 font-bold flex items-center gap-1.5"><i class="fa-solid fa-bolt"></i> EduSync</span>
+                <span class="text-slate-300">•</span>
+                <span>Educação e Tecnologia</span>
+                <a href="#ajuda-privacidade" class="ml-3 text-indigo-600 hover:underline">Ajuda e privacidade</a>
+            </div>
+            <p class="text-xs text-slate-400">
+                Projeto Desenvolvido por Alunos e Professores • EduSync © 2026
+            </p>
+        </div>
+    </footer>
+
+    <div role="note" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+            <strong>Importante: demonstração.</strong> Os dados ficam somente neste navegador (IndexedDB), sem autenticação, proteção contra inspeção/alteração, backup ou sincronização entre dispositivos. Evite dados reais de alunos e informações sensíveis até implementar um backend seguro com controle de acesso.
+        </div>
+    </div>
+
+    <!-- SCRIPT DA LOUSA DIGITAL INTERATIVA -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Banco local do navegador (IndexedDB); não é um serviço compartilhado na nuvem.
+            const NOME_BANCO = 'EduSyncLocalDB';
+            let bancoEduSync = null;
+            let estadoPersistido = {};
+
+            function abrirBancoLocal() {
+                return new Promise((resolve, reject) => {
+                    if (!('indexedDB' in window)) {
+                        reject(new Error('IndexedDB não está disponível neste navegador.'));
+                        return;
+                    }
+                    const pedido = window.indexedDB.open(NOME_BANCO, 1);
+                    pedido.onupgradeneeded = () => {
+                        const banco = pedido.result;
+                        if (!banco.objectStoreNames.contains('estado')) {
+                            banco.createObjectStore('estado', { keyPath: 'id' });
+                        }
+                    };
+                    pedido.onsuccess = () => {
+                        bancoEduSync = pedido.result;
+                        bancoEduSync.onversionchange = () => bancoEduSync.close();
+                        resolve(bancoEduSync);
+                    };
+                    pedido.onerror = () => reject(pedido.error || new Error('Não foi possível abrir o banco local.'));
+                });
+            }
+
+            try {
+                await abrirBancoLocal();
+                estadoPersistido = await new Promise((resolve, reject) => {
+                    const transacao = bancoEduSync.transaction('estado', 'readonly');
+                    const pedido = transacao.objectStore('estado').get('principal');
+                    pedido.onsuccess = () => resolve(pedido.result || {});
+                    pedido.onerror = () => reject(pedido.error || new Error('Não foi possível ler o banco local.'));
+                });
+            } catch (erroBanco) {
+                console.warn('EduSync: persistência local indisponível; a sessão funcionará apenas em memória.', erroBanco);
+                estadoPersistido = {};
+            }
+
+            function persistirEstado() {
+                if (!bancoEduSync) return Promise.resolve();
+                const estado = {
+                    id: 'principal',
+                    foundItems: itensAchados,
+                    lostItems: itensPerdidos,
+                    rooms: salasCadastradas.map(sala => ({
+                        id: sala.id,
+                        nome: sala.nome,
+                        iconClass: sala.iconClass,
+                        professor: sala.professor,
+                        alunos: sala.alunos,
+                        canvasData: typeof sala.canvasData === 'string' ? sala.canvasData : null
+                    })),
+                    updatedAt: new Date().toISOString()
+                };
+                return new Promise((resolve, reject) => {
+                    const transacao = bancoEduSync.transaction('estado', 'readwrite');
+                    transacao.objectStore('estado').put(estado);
+                    transacao.oncomplete = () => resolve();
+                    transacao.onerror = () => reject(transacao.error || new Error('Falha ao salvar no banco local.'));
+                    transacao.onabort = () => reject(transacao.error || new Error('Gravação local cancelada.'));
+                });
+            }
+
+            function salvarEstadoSemBloquear() {
+                persistirEstado().catch(erro => console.error('EduSync: falha ao salvar dados localmente.', erro));
+            }
+
+            // --- GERENCIAMENTO DE MÚLTIPLAS SALAS DE AULA ---
+            const salasCadastradas = [
+                { id: 'sala-1', nome: 'Sala 1', iconClass: 'fa-school', professor: 'Prof. Carlos', alunos: 5, canvasData: null },
+                { id: 'sala-2', nome: 'Sala 2', iconClass: 'fa-flask', professor: 'Profª Julia', alunos: 3, canvasData: null },
+                { id: 'sala-3', nome: 'Sala 3', iconClass: 'fa-book', professor: 'Profª Helena', alunos: 8, canvasData: null },
+                { id: 'sala-4', nome: 'Sala 4', iconClass: 'fa-dna', professor: 'Prof. Fernando', alunos: 4, canvasData: null },
+                { id: 'sala-5', nome: 'Sala 5', iconClass: 'fa-atom', professor: 'Prof. Roberto', alunos: 6, canvasData: null },
+                { id: 'sala-6', nome: 'Sala 6', iconClass: 'fa-flask', professor: 'Profª Mariana', alunos: 2, canvasData: null },
+                { id: 'sala-7', nome: 'Sala 7', iconClass: 'fa-book-open', professor: 'Profª Patricia', alunos: 7, canvasData: null },
+                { id: 'sala-8', nome: 'Sala 8', iconClass: 'fa-globe', professor: 'Prof. André', alunos: 5, canvasData: null },
+                { id: 'sala-9', nome: 'Sala 9', iconClass: 'fa-comments', professor: 'Profª Sarah', alunos: 4, canvasData: null },
+                { id: 'sala-10', nome: 'Sala 10', iconClass: 'fa-compass-drafting', professor: 'Prof. Lucas', alunos: 3, canvasData: null },
+                { id: 'sala-11', nome: 'Sala 11', iconClass: 'fa-laptop-code', professor: 'Prof. Gabriel', alunos: 9, canvasData: null },
+                { id: 'sala-12', nome: 'Sala 12', iconClass: 'fa-lightbulb', professor: 'Profª Camila', alunos: 3, canvasData: null },
+                { id: 'sala-13', nome: 'Sala 13', iconClass: 'fa-palette', professor: 'Profª Beatriz', alunos: 5, canvasData: null },
+                { id: 'sala-14', nome: 'Sala 14', iconClass: 'fa-music', professor: 'Prof. Marcelo', alunos: 4, canvasData: null },
+                { id: 'sala-15', nome: 'Sala 15', iconClass: 'fa-football', professor: 'Prof. Thiago', alunos: 12, canvasData: null },
+                { id: 'sala-16', nome: 'Sala 16', iconClass: 'fa-briefcase', professor: 'Profª Larissa', alunos: 6, canvasData: null },
+                { id: 'sala-17', nome: 'Sala 17', iconClass: 'fa-pen-nib', professor: 'Profª Fernanda', alunos: 8, canvasData: null },
+                { id: 'sala-18', nome: 'Sala 18', iconClass: 'fa-seedling', professor: 'Prof. Daniel', alunos: 5, canvasData: null },
+                { id: 'sala-19', nome: 'Sala 19', iconClass: 'fa-landmark', professor: 'Prof. Eduardo', alunos: 4, canvasData: null },
+                { id: 'sala-20', nome: 'Sala 20', iconClass: 'fa-rocket', professor: 'Profª Vanessa', alunos: 10, canvasData: null }
+            ];
+
+            // Recupera as salas personalizadas e os quadros persistidos anteriormente.
+            if (Array.isArray(estadoPersistido.rooms)) {
+                const salasSalvas = estadoPersistido.rooms.filter(sala => sala && typeof sala.id === 'string');
+                salasCadastradas.forEach(sala => {
+                    const salva = salasSalvas.find(item => item.id === sala.id);
+                    if (salva && typeof salva.canvasData === 'string' && salva.canvasData.startsWith('data:image/')) {
+                        sala.canvasData = salva.canvasData;
+                    }
+                });
+                salasSalvas.forEach(salva => {
+                    if (!salasCadastradas.some(sala => sala.id === salva.id)) {
+                        salasCadastradas.push({
+                            id: salva.id,
+                            nome: String(salva.nome || 'Sala'),
+                            iconClass: String(salva.iconClass || 'fa-school'),
+                            professor: String(salva.professor || 'Prof. Convidado'),
+                            alunos: Number(salva.alunos) || 0,
+                            canvasData: typeof salva.canvasData === 'string' && salva.canvasData.startsWith('data:image/') ? salva.canvasData : null
+                        });
+                    }
+                });
+            }
+
+            let salaAtualId = 'sala-1';
+
+            const selectSalaAtiva = document.getElementById('select-sala-ativa');
+            const tituloLousaSala = document.getElementById('titulo-lousa-sala');
+            const tagNomeSala = document.getElementById('tag-nome-sala');
+            const qtdOnline = document.getElementById('qtd-online');
+
+            const modalNovaSala = document.getElementById('modal-nova-sala');
+            const btnCriarSala = document.getElementById('btn-criar-sala');
+            const btnFecharModalSala = document.getElementById('btn-fechar-modal-sala');
+            const btnCancelarCadSala = document.getElementById('btn-cancelar-cad-sala');
+            const formCadastrarSala = document.getElementById('form-cadastrar-sala');
+
+            // Salva o estado atual da lousa como imagem serializável no banco local.
+            function salvarSnapshotSalaAtual() {
+                const salaObj = salasCadastradas.find(s => s.id === salaAtualId);
+                if (salaObj && canvas && ctx) {
+                    salaObj.canvasData = canvas.toDataURL('image/png');
+                    salvarEstadoSemBloquear();
+                }
+            }
+
+            // Carrega o estado salvo ou limpa a tela para a nova sala selecionada
+            function carregarSnapshotSala(idSala) {
+                salaAtualId = idSala;
+                const salaObj = salasCadastradas.find(s => s.id === idSala);
+                if (!salaObj) return;
+
+                // Atualizar cabeçalhos da interface
+                tituloLousaSala.textContent = `${salaObj.nome}`;
+                tagNomeSala.textContent = salaObj.nome.split('-')[0].trim();
+                qtdOnline.textContent = salaObj.alunos;
+
+                // Limpar canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Restaurar se houver desenho armazenado para esta sala
+                if (typeof salaObj.canvasData === 'string' && salaObj.canvasData.startsWith('data:image/')) {
+                    const imagem = new Image();
+                    imagem.onload = () => ctx.drawImage(imagem, 0, 0, canvas.width, canvas.height);
+                    imagem.src = salaObj.canvasData;
+                }
+            }
+
+            // Mudar de sala pelo dropdown
+            selectSalaAtiva.addEventListener('change', (e) => {
+                salvarSnapshotSalaAtual();
+                carregarSnapshotSala(e.target.value);
+            });
+
+            // Modal para cadastrar nova sala
+            btnCriarSala.addEventListener('click', () => modalNovaSala.classList.remove('hidden'));
+            btnFecharModalSala.addEventListener('click', () => modalNovaSala.classList.add('hidden'));
+            btnCancelarCadSala.addEventListener('click', () => modalNovaSala.classList.add('hidden'));
+
+            formCadastrarSala.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const nome = document.getElementById('cad-sala-nome').value;
+                const prof = document.getElementById('cad-sala-prof').value || 'Prof. Convidado';
+                const iconClass = document.getElementById('cad-sala-icone').value;
+                const newId = `sala-${Date.now()}`;
+
+                const novaSala = {
+                    id: newId,
+                    nome: `${nome}`,
+                    iconClass: iconClass,
+                    professor: prof,
+                    alunos: 1,
+                    canvasData: null
+                };
+
+                salasCadastradas.push(novaSala);
+                salvarEstadoSemBloquear();
+
+                // Adicionar no select
+                const option = document.createElement('option');
+                option.value = newId;
+                option.textContent = `${nome}`;
+                selectSalaAtiva.appendChild(option);
+
+                // Selecionar e carregar a nova sala criada
+                salvarSnapshotSalaAtual();
+                selectSalaAtiva.value = newId;
+                carregarSnapshotSala(newId);
+
+                formCadastrarSala.reset();
+                modalNovaSala.classList.add('hidden');
+
+                if (typeof dispararToast === 'function') {
+                    dispararToast("Nova Sala Cadastrada!", `A sala "${nome}" está pronta e ativa para uso.`, "indigo");
+                }
+            });
+
+            // Chamada: interface exclusiva do perfil de professor; presença real depende de backend.
+            const modalChamada = document.getElementById('modal-chamada');
+            const btnChamada = document.getElementById('btn-chamada');
+            const fecharChamada = () => {
+                modalChamada.classList.add('hidden');
+                btnChamada.setAttribute('aria-expanded', 'false');
+            };
+            btnChamada.addEventListener('click', () => {
+                if (perfilAtivo !== 'professor') return;
+                document.getElementById('chamada-nome-sala').textContent = tituloLousaSala.textContent;
+                modalChamada.classList.remove('hidden');
+                btnChamada.setAttribute('aria-expanded', 'true');
+                document.getElementById('btn-fechar-chamada').focus();
+            });
+            document.getElementById('btn-fechar-chamada').addEventListener('click', fecharChamada);
+            document.getElementById('btn-fechar-chamada-rodape').addEventListener('click', fecharChamada);
+            modalChamada.addEventListener('click', (event) => { if (event.target === modalChamada) fecharChamada(); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !modalChamada.classList.contains('hidden')) fecharChamada(); });
+
+            // Controles locais de acessibilidade (não exigem serviços externos).
+            let escalaTextoA11y = 100;
+            const aplicarEscalaTexto = () => { document.documentElement.style.fontSize = `${escalaTextoA11y}%`; };
+            document.getElementById('a11y-aumentar').addEventListener('click', () => {
+                escalaTextoA11y = Math.min(130, escalaTextoA11y + 10); aplicarEscalaTexto();
+            });
+            document.getElementById('a11y-diminuir').addEventListener('click', () => {
+                escalaTextoA11y = Math.max(80, escalaTextoA11y - 10); aplicarEscalaTexto();
+            });
+            document.getElementById('a11y-contraste').addEventListener('click', (e) => {
+                const ativo = document.body.classList.toggle('alto-contraste');
+                e.currentTarget.setAttribute('aria-pressed', String(ativo));
+            });
+            document.getElementById('a11y-reset').addEventListener('click', () => {
+                escalaTextoA11y = 100; aplicarEscalaTexto();
+                document.body.classList.remove('alto-contraste');
+                document.getElementById('a11y-contraste').setAttribute('aria-pressed', 'false');
+            });
+
+            // --- LÓGICA DO MÓDULO DE CADASTRO DE USUÁRIO ---
+            let perfilSelecionado = 'aluno'; // seleção no formulário
+            let perfilAtivo = null; // perfil configurado na demonstração
+            
+            const modalUsuario = document.getElementById('modal-usuario');
+            const btnAbrirCadastro = document.getElementById('btn-abrir-cadastro');
+            const btnFecharModalUsuario = document.getElementById('btn-fechar-modal-usuario');
+            const btnCancelarCadUsuario = document.getElementById('btn-cancelar-cad-usuario');
+            const formCadastroUsuario = document.getElementById('form-cadastro-usuario');
+            const tipoAlunoBtn = document.getElementById('tipo-aluno');
+            const tipoProfBtn = document.getElementById('tipo-professor');
+            const campoTurma = document.getElementById('campo-turma');
+            const campoDisciplina = document.getElementById('campo-disciplina');
+            const salaCadastroSelect = document.getElementById('cad-sala-usuario');
+            // As opções vêm da lista de salas disponíveis neste protótipo.
+            salasCadastradas.forEach((sala) => {
+                const option = document.createElement('option');
+                option.value = sala.id;
+                option.textContent = sala.nome;
+                salaCadastroSelect.appendChild(option);
+            });
+
+            const userProfileBadge = document.getElementById('user-profile-badge');
+            const userNameDisplay = document.getElementById('user-name-display');
+            const userRoleDisplay = document.getElementById('user-role-display');
+            const userTypeIcon = document.getElementById('user-type-icon');
+            const btnCadastroTexto = document.getElementById('btn-cadastro-texto');
+
+            function alternarPerfilCadastro(tipo) {
+                perfilSelecionado = tipo;
+                if (tipo === 'aluno') {
+                    tipoAlunoBtn.className = "py-2 px-3 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition flex items-center justify-center gap-1.5";
+                    tipoProfBtn.className = "py-2 px-3 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5";
+                    campoTurma.classList.remove('hidden');
+                    campoDisciplina.classList.add('hidden');
+                } else {
+                    tipoProfBtn.className = "py-2 px-3 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition flex items-center justify-center gap-1.5";
+                    tipoAlunoBtn.className = "py-2 px-3 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5";
+                    campoDisciplina.classList.remove('hidden');
+                    campoTurma.classList.add('hidden');
+                }
+            }
+
+            tipoAlunoBtn.addEventListener('click', () => alternarPerfilCadastro('aluno'));
+            tipoProfBtn.addEventListener('click', () => alternarPerfilCadastro('professor'));
+
+            btnAbrirCadastro.addEventListener('click', () => modalUsuario.classList.remove('hidden'));
+            // Fechar/cancelar cadastro não concede acesso à lousa; a sala só é definida ao concluir.
+            btnFecharModalUsuario.addEventListener('click', () => modalUsuario.classList.add('hidden'));
+            btnCancelarCadUsuario.addEventListener('click', () => modalUsuario.classList.add('hidden'));
+
+            formCadastroUsuario.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const nome = document.getElementById('cad-nome').value.trim();
+                const salaSelecionadaId = salaCadastroSelect.value;
+                const salaSelecionada = salasCadastradas.find(s => s.id === salaSelecionadaId);
+                if (!salaSelecionada) {
+                    salaCadastroSelect.setCustomValidity('Selecione uma sala válida.');
+                    salaCadastroSelect.reportValidity();
+                    return;
+                }
+                salaCadastroSelect.setCustomValidity('');
+                const detalhe = perfilSelecionado === 'aluno' 
+                    ? document.getElementById('cad-detalhe-aluno').value || 'Aluno'
+                    : document.getElementById('cad-detalhe-prof').value || 'Professor';
+
+                // Demonstração de UX: restringe o seletor à sala e os privilégios de edição.
+                // A permissão real precisa ser validada no backend.
+                perfilAtivo = perfilSelecionado;
+                const professorPodeEditar = perfilAtivo === 'professor';
+                canvas.style.pointerEvents = professorPodeEditar ? 'auto' : 'none';
+                canvas.setAttribute('aria-readonly', professorPodeEditar ? 'false' : 'true');
+                ['tool-pen', 'tool-eraser', 'tool-text', 'btn-limpar', 'btn-undo'].forEach((id) => {
+                    const controle = document.getElementById(id);
+                    if (controle) {
+                        controle.disabled = !professorPodeEditar;
+                        controle.classList.toggle('opacity-40', !professorPodeEditar);
+                        controle.classList.toggle('cursor-not-allowed', !professorPodeEditar);
+                        controle.title = professorPodeEditar ? 'Disponível para professores' : 'Somente professores podem editar a lousa';
+                    }
+                });
+                corInput.disabled = !professorPodeEditar;
+                colorButtons.forEach((botao) => { botao.disabled = !professorPodeEditar; });
+                espessuraInput.disabled = !professorPodeEditar;
+                const avisoPermissao = document.getElementById('aviso-permissao-lousa');
+                if (avisoPermissao) {
+                    avisoPermissao.textContent = professorPodeEditar
+                        ? 'Modo professor: edição habilitada nesta demonstração.'
+                        : 'Modo aluno: somente visualização. A edição é exclusiva do professor.';
+                    avisoPermissao.classList.remove('hidden');
+                }
+                const btnChamada = document.getElementById('btn-chamada');
+                btnChamada.classList.toggle('hidden', !professorPodeEditar);
+                document.getElementById('chamada-nome-sala').textContent = salaSelecionada.nome;
+                salaAtualId = salaSelecionada.id;
+                selectSalaAtiva.replaceChildren();
+                const salaOption = document.createElement('option');
+                salaOption.value = salaSelecionada.id;
+                salaOption.textContent = salaSelecionada.nome;
+                selectSalaAtiva.appendChild(salaOption);
+                selectSalaAtiva.value = salaSelecionada.id;
+                selectSalaAtiva.disabled = true;
+                tituloLousaSala.textContent = salaSelecionada.nome;
+                tagNomeSala.textContent = salaSelecionada.nome;
+                qtdOnline.textContent = salaSelecionada.alunos;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (typeof salaSelecionada.canvasData === 'string' && salaSelecionada.canvasData.startsWith('data:image/')) {
+                    const imagemSala = new Image();
+                    imagemSala.onload = () => ctx.drawImage(imagemSala, 0, 0, canvas.width, canvas.height);
+                    imagemSala.src = salaSelecionada.canvasData;
+                }
+
+                userNameDisplay.textContent = nome;
+                userRoleDisplay.textContent = `${perfilSelecionado === 'aluno' ? `Aluno (${detalhe})` : `Prof. (${detalhe})`} • ${salaSelecionada.nome}`;
+                userTypeIcon.innerHTML = perfilSelecionado === 'aluno' ? '<i class="fa-solid fa-user-graduate"></i>' : '<i class="fa-solid fa-chalkboard-user"></i>';
+
+                userProfileBadge.classList.remove('hidden');
+                userProfileBadge.classList.add('flex');
+                document.getElementById('lousa-bloqueio-perfil').classList.add('hidden');
+                btnCadastroTexto.textContent = "Alterar Perfil";
+                
+                modalUsuario.classList.add('hidden');
+                formCadastroUsuario.reset();
+
+                if (typeof dispararToast === 'function') {
+                    dispararToast("Perfil de demonstração configurado", `Bem-vindo(a), ${nome}. A interface está vinculada a ${salaSelecionada.nome}; isso não substitui autorização no servidor.`, "indigo");
+                }
+            });
+
+            // --- LÓGICA DO MÓDULO ACHADOS & PERDIDOS ---
+            let modoVisualizacao = 'achados'; // 'achados' ou 'procurados'
+
+            // Lista de itens encontrados no campus
+            const itensAchados = [
+                {
+                    id: 1,
+                    titulo: "Casaco de Frio Escuro",
+                    categoria: "Agasalho / Roupa",
+                    local: "Pátio Principal",
+                    data: "Ontem às 14:30",
+                    status: "Aguardando Retirada",
+                    descricao: "Moletom tamanho M, marca esportiva com zíper frontal.",
+                    iconClass: "fa-shirt"
+                },
+                {
+                    id: 2,
+                    titulo: "Garrafa Térmica Inox",
+                    categoria: "Garrafas / Squeeze",
+                    local: "Laboratório Maker",
+                    data: "Hoje às 09:15",
+                    status: "Aguardando Retirada",
+                    descricao: "Garrafa metálica prateada com adesivo de foguete.",
+                    iconClass: "fa-bottle-water"
+                },
+                {
+                    id: 3,
+                    titulo: "Calculadora Científica",
+                    categoria: "Eletrônicos",
+                    local: "Sala de Matemática 04",
+                    data: "2 dias atrás",
+                    status: "Devolvido",
+                    descricao: "Calculadora preta com tampa protetora.",
+                    iconClass: "fa-calculator"
+                },
+                {
+                    id: 4,
+                    titulo: "Estojo Escolar com Canetas",
+                    categoria: "Material Escolar",
+                    local: "Biblioteca",
+                    data: "Hoje às 11:00",
+                    status: "Aguardando Retirada",
+                    descricao: "Estojo jeans com fecho verde e marcador de texto.",
+                    iconClass: "fa-pen-clip"
+                }
+            ];
+
+            if (Array.isArray(estadoPersistido.foundItems)) {
+                itensAchados.splice(0, itensAchados.length, ...estadoPersistido.foundItems);
+            }
+
+            // Lista de alertas de pertences PERDIDOS (pedidos de notificação)
+            const itensPerdidos = [
+                {
+                    id: 101,
+                    titulo: "Fone de Ouvido Bluetooth Sem Fio",
+                    categoria: "Eletrônicos",
+                    localProvavel: "Quadra / Arquibancada",
+                    data: "Hoje às 08:00",
+                    status: "Procurando Destaque",
+                    dono: "Mateus Silva - 3º A",
+                    contato: "mateus.silva@escola.com",
+                    descricao: "Caixinha de carregamento branca com adesivo do Batman.",
+                    iconClass: "fa-headphones"
+                },
+                {
+                    id: 102,
+                    titulo: "Chaveiro com 3 chaves e fita azul",
+                    categoria: "Outros",
+                    localProvavel: "Corredor do Bloco B",
+                    data: "Ontem",
+                    status: "Procurando Destaque",
+                    dono: "Profª Helena - História",
+                    contato: "(11) 98765-4321",
+                    descricao: "Uma chave tetra e duas comuns no chaveiro.",
+                    iconClass: "fa-key"
+                }
+            ];
+
+            if (Array.isArray(estadoPersistido.lostItems)) {
+                itensPerdidos.splice(0, itensPerdidos.length, ...estadoPersistido.lostItems);
+            }
+            if (!Array.isArray(estadoPersistido.foundItems) || !Array.isArray(estadoPersistido.lostItems) || !Array.isArray(estadoPersistido.rooms)) {
+                salvarEstadoSemBloquear();
+            }
+
+            // Referências de Elementos do DOM
+            const gridItens = document.getElementById('grid-itens');
+            const buscaInput = document.getElementById('busca-item');
+            const filtroCat = document.getElementById('filtro-categoria');
+            
+            const modalCadastro = document.getElementById('modal-cadastro');
+            const btnNovoItem = document.getElementById('btn-novo-item');
+            const btnPerdiItem = document.getElementById('btn-perdi-item');
+            const btnFecharModal = document.getElementById('btn-fechar-modal');
+            const btnsCancelarModal = document.querySelectorAll('.btn-cancelar-modal');
+
+            const tabAchados = document.getElementById('tab-achados');
+            const tabProcurados = document.getElementById('tab-procurados');
+            const lblModoAtual = document.getElementById('lbl-modo-atual');
+            const countAchados = document.getElementById('count-achados');
+            const countPerdidos = document.getElementById('count-perdidos');
+            const badgeContadorNav = document.getElementById('badge-contador-perdidos');
+
+            const modalTabAchado = document.getElementById('modal-tab-achado');
+            const modalTabPerdido = document.getElementById('modal-tab-perdido');
+            const formCadastrarAchado = document.getElementById('form-cadastrar-item');
+            const formCadastrarPerdido = document.getElementById('form-cadastrar-perdido');
+
+            const toastNotificacao = document.getElementById('toast-notificacao');
+            const toastTitulo = document.getElementById('toast-titulo');
+            const toastMensagem = document.getElementById('toast-mensagem');
+
+            function atualizarContadores() {
+                countAchados.textContent = itensAchados.length;
+                countPerdidos.textContent = itensPerdidos.length;
+                if(badgeContadorNav) {
+                    badgeContadorNav.textContent = `${itensPerdidos.length} procurados`;
+                }
+            }
+
+            function alternarModoVisualizacao(modo) {
+                modoVisualizacao = modo;
+                if (modo === 'achados') {
+                    tabAchados.className = "px-4 py-2 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 transition flex items-center gap-1.5";
+                    tabProcurados.className = "px-4 py-2 text-xs font-bold rounded-xl text-slate-500 hover:bg-slate-100 transition flex items-center gap-1.5";
+                    lblModoAtual.textContent = "Objetos Encontrados";
+                } else {
+                    tabProcurados.className = "px-4 py-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-600 border border-rose-100 transition flex items-center gap-1.5";
+                    tabAchados.className = "px-4 py-2 text-xs font-bold rounded-xl text-slate-500 hover:bg-slate-100 transition flex items-center gap-1.5";
+                    lblModoAtual.textContent = "Alertas de Pertences Perdidos";
+                }
+                renderizarItens();
+            }
+
+            function alternarTabModal(aba) {
+                if (aba === 'achado') {
+                    modalTabAchado.className = "text-sm font-bold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 transition flex items-center gap-1.5";
+                    modalTabPerdido.className = "text-sm font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition flex items-center gap-1.5";
+                    formCadastrarAchado.classList.remove('hidden');
+                    formCadastrarPerdido.classList.add('hidden');
+                } else {
+                    modalTabPerdido.className = "text-sm font-bold px-3 py-1.5 rounded-lg bg-rose-50 text-rose-600 transition flex items-center gap-1.5";
+                    modalTabAchado.className = "text-sm font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition flex items-center gap-1.5";
+                    formCadastrarPerdido.classList.remove('hidden');
+                    formCadastrarAchado.classList.add('hidden');
+                }
+            }
+
+            function dispararToast(titulo, mensagem, tipo = 'emerald') {
+                toastTitulo.textContent = titulo;
+                toastMensagem.textContent = mensagem;
+                toastNotificacao.className = `mb-6 p-4 rounded-2xl text-white shadow-xl flex items-center justify-between transition-all ${tipo === 'rose' ? 'bg-rose-600' : 'bg-indigo-600'}`;
+                toastNotificacao.classList.remove('hidden');
+                
+                // Auto hide after 8s
+                setTimeout(() => {
+                    toastNotificacao.classList.add('hidden');
+                }, 8000);
+            }
+
+            function escaparHTML(valor) {
+                return String(valor ?? '').replace(/[&<>"']/g, caractere => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                })[caractere]);
+            }
+
+            function renderizarItens() {
+                atualizarContadores();
+                const busca = buscaInput.value.toLowerCase();
+                const categoria = filtroCat.value;
+
+                gridItens.innerHTML = '';
+
+                if (modoVisualizacao === 'achados') {
+                    const filtrados = itensAchados.filter(item => {
+                        const combinaBusca = item.titulo.toLowerCase().includes(busca) || 
+                                             item.local.toLowerCase().includes(busca) ||
+                                             item.descricao.toLowerCase().includes(busca);
+                        const combinaCat = categoria === 'todos' || item.categoria === categoria;
+                        return combinaBusca && combinaCat;
+                    });
+
+                    if (filtrados.length === 0) {
+                        gridItens.innerHTML = `
+                            <div class="col-span-full bg-white p-8 rounded-2xl text-center border border-slate-200">
+                                <span class="text-3xl text-slate-400 block mb-2"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <p class="text-slate-600 font-medium">Nenhum pertence achado corresponde aos filtros.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    filtrados.forEach(item => {
+                        const card = document.createElement('div');
+                        const isDevolvido = item.status === 'Devolvido';
+                        card.className = `bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between ${isDevolvido ? 'opacity-65 border-slate-200' : 'border-slate-200/90'}`;
+
+                        card.innerHTML = `
+                            <div>
+                                <div class="flex items-start justify-between gap-2 mb-3">
+                                    <span class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 text-lg shrink-0">
+                                        <i class="fa-solid ${escaparHTML(item.iconClass || 'fa-box')}"></i>
+                                    </span>
+                                    <span class="text-[11px] font-bold px-2.5 py-1 rounded-full ${isDevolvido ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}">
+                                        ${escaparHTML(item.status)}
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-base mb-1">${escaparHTML(item.titulo)}</h4>
+                                <p class="text-xs text-slate-500 mb-3">${escaparHTML(item.descricao)}</p>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1">
+                                <div class="flex items-center gap-1.5">
+                                    <i class="fa-solid fa-location-dot text-indigo-500 w-3.5"></i>
+                                    <span>Local: <strong class="text-slate-700">${escaparHTML(item.local)}</strong></span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <i class="fa-regular fa-clock text-indigo-500 w-3.5"></i>
+                                    <span>Registrado: ${escaparHTML(item.data)}</span>
+                                </div>
+                            </div>
+                        `;
+                        gridItens.appendChild(card);
+                    });
+
+                } else {
+                    // MODO PROCURADOS / ALERTAS DE PERDIDOS
+                    const filtradosPerdidos = itensPerdidos.filter(item => {
+                        const combinaBusca = item.titulo.toLowerCase().includes(busca) || 
+                                             item.dono.toLowerCase().includes(busca) ||
+                                             item.descricao.toLowerCase().includes(busca);
+                        const combinaCat = categoria === 'todos' || item.categoria === categoria;
+                        return combinaBusca && combinaCat;
+                    });
+
+                    if (filtradosPerdidos.length === 0) {
+                        gridItens.innerHTML = `
+                            <div class="col-span-full bg-white p-8 rounded-2xl text-center border border-slate-200">
+                                <span class="text-3xl text-rose-400 block mb-2"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                                <p class="text-slate-600 font-medium">Nenhum alerta de busca cadastrado com esses filtros.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    filtradosPerdidos.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = "bg-white border border-rose-200/80 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between relative overflow-hidden";
+
+                        card.innerHTML = `
+                            <div class="absolute -right-6 -top-6 w-16 h-16 bg-rose-500/10 rounded-full pointer-events-none"></div>
+                            <div>
+                                <div class="flex items-start justify-between gap-2 mb-3">
+                                    <span class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg shrink-0">
+                                        <i class="fa-solid ${escaparHTML(item.iconClass || 'fa-magnifying-glass')}"></i>
+                                    </span>
+                                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200 flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                                        Notificação Ativa
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-base mb-1">${escaparHTML(item.titulo)}</h4>
+                                <p class="text-xs text-slate-600 mb-3">${escaparHTML(item.descricao)}</p>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-600">Dono / Aluno:</span>
+                                    <strong class="text-slate-800">${escaparHTML(item.dono)}</strong>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-600">Local Provável:</span>
+                                    <span class="text-slate-700">${escaparHTML(item.localProvavel)}</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-slate-600">Contato:</span>
+                                    <span class="text-slate-700 text-right">Intermediado pela escola</span>
+                                </div>
+                            </div>
+                        `;
+                        gridItens.appendChild(card);
+                    });
+                }
+            }
+
+            // Event Listeners das Abas e Modais
+            tabAchados.addEventListener('click', () => alternarModoVisualizacao('achados'));
+            tabProcurados.addEventListener('click', () => alternarModoVisualizacao('procurados'));
+
+            modalTabAchado.addEventListener('click', () => alternarTabModal('achado'));
+            modalTabPerdido.addEventListener('click', () => alternarTabModal('perdido'));
+
+            btnNovoItem.addEventListener('click', () => {
+                alternarTabModal('achado');
+                modalCadastro.classList.remove('hidden');
+            });
+
+            btnPerdiItem.addEventListener('click', () => {
+                alternarTabModal('perdido');
+                modalCadastro.classList.remove('hidden');
+            });
+
+            btnFecharModal.addEventListener('click', () => modalCadastro.classList.add('hidden'));
+            btnsCancelarModal.forEach(btn => btn.addEventListener('click', () => modalCadastro.classList.add('hidden')));
+
+            buscaInput.addEventListener('input', renderizarItens);
+            filtroCat.addEventListener('change', renderizarItens);
+
+            // Submissão do Formulário 1: Item Achado
+            formCadastrarAchado.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const titulo = document.getElementById('input-titulo').value;
+                const categoria = document.getElementById('input-categoria').value;
+                const local = document.getElementById('input-local').value;
+                const descricao = document.getElementById('input-descricao').value;
+
+                const iconesPorCategoria = {
+                    'Agasalho / Roupa': 'fa-shirt',
+                    'Eletrônicos': 'fa-mobile-screen-button',
+                    'Garrafas / Squeeze': 'fa-bottle-water',
+                    'Material Escolar': 'fa-pen-clip',
+                    'Outros': 'fa-box'
+                };
+
+                const novoAchado = {
+                    id: Date.now(),
+                    titulo: titulo,
+                    categoria: categoria,
+                    local: local,
+                    data: 'Agora mesmo',
+                    status: 'Aguardando Retirada',
+                    descricao: descricao || 'Sem detalhes adicionais.',
+                    iconClass: iconesPorCategoria[categoria] || 'fa-box'
+                };
+
+                itensAchados.unshift(novoAchado);
+                salvarEstadoSemBloquear();
+
+                // Checar se combina com algum item na lista de perdidos
+                const matchPerdido = itensPerdidos.find(p => 
+                    p.categoria === categoria && 
+                    (p.titulo.toLowerCase().includes(titulo.toLowerCase()) || titulo.toLowerCase().includes(p.titulo.toLowerCase()))
+                );
+
+                formCadastrarAchado.reset();
+                modalCadastro.classList.add('hidden');
+                alternarModoVisualizacao('achados');
+
+                if (matchPerdido) {
+                    dispararToast(
+                        "Correspondência Encontrada!", 
+                        `Este item bate com o alerta de busca de ${matchPerdido.dono}! Notificação automática disparada para (${matchPerdido.contato}).`,
+                        'indigo'
+                    );
+                } else {
+                    dispararToast("Item Achado Registrado!", "O objeto já está visível para consulta da comunidade escolar.", "indigo");
+                }
+            });
+
+            // Submissão do Formulário 2: Item Perdido + Notificação
+            formCadastrarPerdido.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const titulo = document.getElementById('input-perdido-titulo').value;
+                const categoria = document.getElementById('input-perdido-categoria').value;
+                const local = document.getElementById('input-perdido-local').value;
+                const dono = document.getElementById('input-perdido-dono').value;
+                const contato = document.getElementById('input-perdido-contato').value;
+                const descricao = document.getElementById('input-perdido-descricao').value;
+
+                const iconesPorCategoria = {
+                    'Agasalho / Roupa': 'fa-shirt',
+                    'Eletrônicos': 'fa-headphones',
+                    'Garrafas / Squeeze': 'fa-bottle-water',
+                    'Material Escolar': 'fa-pen-clip',
+                    'Outros': 'fa-magnifying-glass'
+                };
+
+                const novoPerdido = {
+                    id: Date.now(),
+                    titulo: titulo,
+                    categoria: categoria,
+                    localProvavel: local || 'Não especificado',
+                    data: 'Agora mesmo',
+                    status: 'Procurando Destaque',
+                    dono: dono,
+                    contato: contato,
+                    descricao: descricao || 'Sem detalhes adicionais.',
+                    iconClass: iconesPorCategoria[categoria] || 'fa-magnifying-glass'
+                };
+
+                itensPerdidos.unshift(novoPerdido);
+                salvarEstadoSemBloquear();
+
+                formCadastrarPerdido.reset();
+                modalCadastro.classList.add('hidden');
+                alternarModoVisualizacao('procurados');
+
+                dispararToast(
+                    "Alerta Configurado com Sucesso!",
+                    `Seu alerta para "${titulo}" foi registrado. Avisaremos você em ${contato} assim que o item for achado!`,
+                    'rose'
+                );
+            });
+
+            renderizarItens();
+
+            // --- LÓGICA DA LOUSA INTERATIVA (EXISTENTE) ---
+            const canvas = document.getElementById('lousa-canvas');
+            const ctx = canvas.getContext('2d');
+            const wrapper = document.getElementById('canvas-wrapper');
+            
+            // UI Controls
+            const corInput = document.getElementById('cor-pincel');
+            const customColorPreview = document.getElementById('custom-color-preview');
+            const espessuraInput = document.getElementById('espessura');
+            const espessuraVal = document.getElementById('espessura-val');
+            const btnLimpar = document.getElementById('btn-limpar');
+            const btnUndo = document.getElementById('btn-undo');
+            const btnDownload = document.getElementById('btn-download');
+            const btnFullscreen = document.getElementById('btn-fullscreen');
+            const selectBg = document.getElementById('select-bg');
+            const toolPen = document.getElementById('tool-pen');
+            const toolEraser = document.getElementById('tool-eraser');
+            const toolText = document.getElementById('tool-text');
+            const colorButtons = document.querySelectorAll('.color-btn');
+
+            // State Variables
+            let desenhando = false;
+            let modoBorracha = false;
+            let modoTexto = false;
+            let corAtual = '#ffffff';
+            let espessuraAtual = 4;
+            let historyStack = []; // Stores image snapshots for undo
+            const MAX_HISTORY = 15;
+
+            // Save state for undo functionality
+            function saveState() {
+                if (historyStack.length >= MAX_HISTORY) {
+                    historyStack.shift();
+                }
+                historyStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+            }
+
+            // Canvas Responsive Resize Function
+            function ajustarTamanhoCanvas() {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                if (canvas.width > 0 && canvas.height > 0) {
+                    tempCtx.drawImage(canvas, 0, 0);
+                }
+
+                canvas.width = wrapper.clientWidth;
+                canvas.height = wrapper.clientHeight;
+
+                if (tempCanvas.width > 0 && tempCanvas.height > 0) {
+                    ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            // Adjust on load and window resize
+            ajustarTamanhoCanvas();
+            window.addEventListener('resize', ajustarTamanhoCanvas);
+
+            // Alternar Modo Quadro Grande / Tela Cheia (Fullscreen safe with fallback)
+            if (btnFullscreen) {
+                btnFullscreen.addEventListener('click', () => {
+                    const isPseudoFull = wrapper.classList.contains('custom-fullscreen');
+
+                    if (!document.fullscreenElement && !isPseudoFull) {
+                        try {
+                            const req = wrapper.requestFullscreen || wrapper.webkitRequestFullscreen;
+                            if (req) {
+                                const p = req.call(wrapper);
+                                if (p && typeof p.catch === 'function') {
+                                    p.catch(() => {
+                                        // Fallback if browser permission policy blocks native fullscreen
+                                        wrapper.classList.add('custom-fullscreen');
+                                        ajustarTamanhoCanvas();
+                                    });
+                                }
+                            } else {
+                                wrapper.classList.add('custom-fullscreen');
+                                ajustarTamanhoCanvas();
+                            }
+                        } catch (err) {
+                            wrapper.classList.add('custom-fullscreen');
+                            ajustarTamanhoCanvas();
+                        }
+                    } else {
+                        if (document.fullscreenElement) {
+                            if (document.exitFullscreen) {
+                                document.exitFullscreen().catch(() => {});
+                            }
+                        }
+                        if (isPseudoFull) {
+                            wrapper.classList.remove('custom-fullscreen');
+                            ajustarTamanhoCanvas();
+                        }
+                    }
+                });
+
+                document.addEventListener('fullscreenchange', () => {
+                    setTimeout(ajustarTamanhoCanvas, 100);
+                });
+
+                // Exit pseudo-fullscreen on ESC key press
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && wrapper.classList.contains('custom-fullscreen')) {
+                        wrapper.classList.remove('custom-fullscreen');
+                        ajustarTamanhoCanvas();
+                    }
+                });
+            }
+
+            // Pointer Events (Unifica Suporte a Caneta Touch, Stylus com Pressão e Mouse)
+            function iniciarDesenhoPointer(e) {
+                if (perfilAtivo !== 'professor') return;
+                const pos = obterPosicao(e);
+                if (modoTexto) {
+                    const texto = window.prompt('Digite o texto que deseja inserir na lousa:');
+                    if (texto && texto.trim()) {
+                        saveState();
+                        const tamanhoFonte = Math.max(16, espessuraAtual * 5);
+                        ctx.save();
+                        ctx.fillStyle = corAtual;
+                        ctx.font = `600 ${tamanhoFonte}px Inter, sans-serif`;
+                        ctx.textBaseline = 'top';
+                        const maxLargura = Math.max(80, canvas.width - pos.x - 12);
+                        const palavras = texto.trim().split(/\s+/);
+                        let linha = '';
+                        let y = pos.y;
+                        palavras.forEach((palavra) => {
+                            const teste = linha ? `${linha} ${palavra}` : palavra;
+                            if (ctx.measureText(teste).width > maxLargura && linha) {
+                                ctx.fillText(linha, pos.x, y);
+                                linha = palavra;
+                                y += tamanhoFonte * 1.3;
+                            } else linha = teste;
+                        });
+                        if (linha) ctx.fillText(linha, pos.x, y);
+                        ctx.restore();
+                        salvarSnapshotSalaAtual();
+                    }
+                    return;
+                }
+                desenhando = true;
+                saveState();
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }
+
+            function desenharPointer(e) {
+                if (perfilAtivo !== 'professor' || !desenhando) return;
+                e.preventDefault();
+                
+                const pos = obterPosicao(e);
+                ctx.lineTo(pos.x, pos.y);
+                
+                // Aplica sensibilidade de pressão da caneta Stylus caso esteja disponível
+                let fatorPressao = (e.pressure && e.pressure > 0) ? (e.pressure * 1.5) : 1;
+
+                if (modoBorracha) {
+                    ctx.strokeStyle = getEraserColor();
+                    ctx.lineWidth = (espessuraAtual * 2.5) * fatorPressao;
+                } else {
+                    ctx.strokeStyle = corAtual;
+                    ctx.lineWidth = espessuraAtual * fatorPressao;
+                }
+
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+            }
+
+            function pararDesenhoPointer() {
+                if (desenhando) {
+                    ctx.closePath();
+                    desenhando = false;
+                    salvarSnapshotSalaAtual();
+                }
+            }
+
+            function obterPosicao(e) {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+
+            // Suporte Unificado com PointerEvents (Caneta Touch + Stylus + Mouse)
+            canvas.addEventListener('pointerdown', iniciarDesenhoPointer);
+            canvas.addEventListener('pointermove', desenharPointer);
+            canvas.addEventListener('pointerup', pararDesenhoPointer);
+            canvas.addEventListener('pointercancel', pararDesenhoPointer);
+            canvas.addEventListener('pointerleave', pararDesenhoPointer);
+
+            // Helper to determine eraser color based on canvas theme
+            function getEraserColor() {
+                const theme = selectBg.value;
+                if (theme === 'light') return '#ffffff';
+                return '#020617'; // slate-950
+            }
+
+            // Canvas Background Switcher
+            selectBg.addEventListener('change', (e) => {
+                const bg = e.target.value;
+                wrapper.className = "relative w-full aspect-[16/9] sm:aspect-[16/8] rounded-2xl border-2 border-slate-700 overflow-hidden shadow-inner transition-all duration-300 ";
+
+                if (bg === 'dark') {
+                    wrapper.classList.add('bg-slate-950');
+                } else if (bg === 'grid') {
+                    wrapper.classList.add('bg-slate-950', 'bg-grid-pattern');
+                } else if (bg === 'dots') {
+                    wrapper.classList.add('bg-slate-950', 'bg-dot-pattern');
+                } else if (bg === 'light') {
+                    wrapper.classList.add('bg-white', 'bg-grid-pattern-light');
+                    // Automatically adjust stroke color if active color is pure white
+                    if (corAtual === '#ffffff' && !modoBorracha) {
+                        setStrokeColor('#1e293b');
+                    }
+                }
+            });
+
+            // Set Stroke Color & Update UI
+            function setStrokeColor(hex) {
+                corAtual = hex;
+                modoBorracha = false;
+                modoTexto = false;
+                toolText.className = 'text-slate-400 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5';
+                canvas.style.cursor = 'crosshair';
+
+                // Update Tool UI
+                toolPen.className = "bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow";
+                toolEraser.className = "text-slate-400 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5";
+
+                // Update Palette Ring Indicators
+                colorButtons.forEach(btn => {
+                    if (btn.dataset.color.toLowerCase() === hex.toLowerCase()) {
+                        btn.classList.add('ring-2', 'ring-indigo-500', 'scale-110');
+                    } else {
+                        btn.classList.remove('ring-2', 'ring-indigo-500', 'scale-110');
+                    }
+                });
+            }
+
+            // Event Listeners for Color Palette Buttons
+            colorButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setStrokeColor(btn.dataset.color);
+                });
+            });
+
+            // Custom Color Picker
+            corInput.addEventListener('input', (e) => {
+                const hex = e.target.value;
+                customColorPreview.style.backgroundColor = hex;
+                setStrokeColor(hex);
+            });
+
+            // Tool Toggles
+            toolPen.addEventListener('click', () => {
+                setStrokeColor(corAtual);
+            });
+
+            toolEraser.addEventListener('click', () => {
+                if (perfilAtivo !== 'professor') return;
+                modoTexto = false;
+                toolText.className = 'text-slate-400 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5';
+                canvas.style.cursor = 'crosshair';
+                modoBorracha = true;
+                toolEraser.className = "bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow";
+                toolPen.className = "text-slate-400 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5";
+            });
+
+            toolText.addEventListener('click', () => {
+                if (perfilAtivo !== 'professor') return;
+                modoTexto = true;
+                modoBorracha = false;
+                toolPen.className = 'text-slate-400 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5';
+                toolEraser.className = 'text-slate-400 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5';
+                toolText.className = 'bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow';
+                canvas.style.cursor = 'text';
+            });
+
+            // Thickness Control
+            espessuraInput.addEventListener('input', (e) => {
+                espessuraAtual = e.target.value;
+                espessuraVal.textContent = espessuraAtual;
+            });
+
+            // Clear Canvas
+            btnLimpar.addEventListener('click', () => {
+                if (perfilAtivo !== 'professor') return;
+                saveState();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                salvarSnapshotSalaAtual();
+            });
+
+            // Undo Action
+            btnUndo.addEventListener('click', () => {
+                if (perfilAtivo !== 'professor') return;
+                if (historyStack.length > 0) {
+                    const previousState = historyStack.pop();
+                    ctx.putImageData(previousState, 0, 0);
+                    salvarSnapshotSalaAtual();
+                }
+            });
+
+            // Download Canvas as Image
+            btnDownload.addEventListener('click', () => {
+                // Create temporary canvas to blend background color + drawing
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                // Fill background based on current mode
+                const bgMode = selectBg.value;
+                tempCtx.fillStyle = (bgMode === 'light') ? '#ffffff' : '#020617';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+                // Draw user strokes on top
+                tempCtx.drawImage(canvas, 0, 0);
+
+                // Export PNG
+                const imageURI = tempCanvas.toDataURL("image/png");
+                const link = document.createElement('a');
+                link.download = `Lousa_EduSync_${Date.now()}.png`;
+                link.href = imageURI;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Unified Pointer Events (Mouse, Touch Screen, Pen & Stylus with Pressure)
+            canvas.addEventListener('pointerdown', iniciarDesenhoPointer);
+            canvas.addEventListener('pointermove', desenharPointer);
+            canvas.addEventListener('pointerup', pararDesenhoPointer);
+            canvas.addEventListener('pointercancel', pararDesenhoPointer);
+            canvas.addEventListener('pointerleave', pararDesenhoPointer);
+        });
+    </script>
+</body>
+</html>
